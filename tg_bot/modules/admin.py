@@ -8,15 +8,15 @@ from telegram.ext import CommandHandler, Filters
 from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import escape_markdown, mention_html
 
-from haruka import dispatcher, updater
-from haruka.modules.disable import DisableAbleCommandHandler
-from haruka.modules.helper_funcs.chat_status import bot_admin, can_promote, user_admin, can_pin
-from haruka.modules.helper_funcs.extraction import extract_user
-from haruka.modules.log_channel import loggable
-from haruka.modules.sql import admin_sql as sql
-from haruka.modules.translations.strings import tld
+from tg_bot import dispatcher, updater
+from tg_bot.modules.disable import DisableAbleCommandHandler
+from tg_bot.modules.helper_funcs.chat_status import bot_admin, can_promote, user_admin, can_pin
+from tg_bot.modules.helper_funcs.extraction import extract_user
+from tg_bot.modules.log_channel import loggable
+from tg_bot.modules.sql import admin_sql as sql
+from tg_bot.modules.translations.strings import tld
 
-from haruka.modules.connection import connected
+from tg_bot.modules.connection import connected
 
 @run_async
 @bot_admin
