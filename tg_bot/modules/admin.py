@@ -13,105 +13,85 @@ from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import bot_admin, can_promote, user_admin, can_pin
 from tg_bot.modules.helper_funcs.extraction import extract_user
 from tg_bot.modules.log_channel import loggable
-from tg_bot.modules.connection import connected
-from tg_bot.modules.translations.strings import tld
+
 
 @run_async
 @bot_admin
+@can_promote
 @user_admin
 @loggable
 def promote(bot: Bot, update: Update, args: List[str]) -> str:
+    chat_id = update.effective_chat.id
     message = update.effective_message  # type: Optional[Message]
-    user = update.effective_user  # type: Optional[User]
     chat = update.effective_chat  # type: Optional[Chat]
-    conn = connected(bot, update, chat, user.id)
-    if not conn == False:
-        chatD = dispatcher.bot.getChat(conn)
-    else:
-        chatD = update.effective_chat
-        if chat.type == "private":
-            exit(1)
-
-    if not chatD.get_member(bot.id).can_promote_members:
-        update.effective_message.reply_text("I can't promote/demote people here! "
-                                            "Make sure I'm admin and can appoint new admins.")
-        exit(1)
+    user = update.effective_user  # type: Optional[User]
 
     user_id = extract_user(message, args)
     if not user_id:
-        message.reply_text(tld(chat.id, "You don't seem to be referring to a user."))
+        message.reply_text("mension one.... 🤷🏻‍♂.")
         return ""
 
-    user_member = chatD.get_member(user_id)
+    user_member = chat.get_member(user_id)
     if user_member.status == 'administrator' or user_member.status == 'creator':
-        message.reply_text(tld(chat.id, "How am I meant to promote someone that's already an admin?"))
+        message.reply_text("How am I meant to promote someone that's already an admin?")
         return ""
 
     if user_id == bot.id:
-        message.reply_text(tld(chat.id, "I can't promote myself! Get an admin to do it for me."))
+        message.reply_text("I can't promote myself! Get an admin to do it for me.")
         return ""
 
     # set same perms as bot - bot can't assign higher perms than itself!
-    bot_member = chatD.get_member(bot.id)
+    bot_member = chat.get_member(bot.id)
 
-    bot.promoteChatMember(chatD.id, user_id,
+    bot.promoteChatMember(chat_id, user_id,
                           can_change_info=bot_member.can_change_info,
                           can_post_messages=bot_member.can_post_messages,
                           can_edit_messages=bot_member.can_edit_messages,
                           can_delete_messages=bot_member.can_delete_messages,
-                          #can_invite_users=bot_member.can_invite_users,
+                          # can_invite_users=bot_member.can_invite_users,
                           can_restrict_members=bot_member.can_restrict_members,
                           can_pin_messages=bot_member.can_pin_messages,
                           can_promote_members=bot_member.can_promote_members)
 
-    message.reply_text(tld(chat.id, f"Successfully promoted in *{chatD.title}*!"), parse_mode=ParseMode.MARKDOWN)
-    return f"<b>{html.escape(chatD.title)}:</b>" \
-            "\n#PROMOTED" \
-           f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
-           f"\n<b>User:</b> {mention_html(user_member.user.id, user_member.user.first_name)}"
+    message.reply_text("promoted🧡")
+    return "<b>{}:</b>" \
+           "\n#PROMOTED" \
+           "\n<b>Admin:</b> {}" \
+           "\n<b>User:</b> {}".format(html.escape(chat.title),
+                                      mention_html(user.id, user.first_name),
+                                      mention_html(user_member.user.id, user_member.user.first_name))
 
 
 @run_async
 @bot_admin
+@can_promote
 @user_admin
 @loggable
 def demote(bot: Bot, update: Update, args: List[str]) -> str:
     chat = update.effective_chat  # type: Optional[Chat]
     message = update.effective_message  # type: Optional[Message]
     user = update.effective_user  # type: Optional[User]
-    conn = connected(bot, update, chat, user.id)
-    if not conn == False:
-        chatD = dispatcher.bot.getChat(conn)
-    else:
-        chatD = update.effective_chat
-        if chat.type == "private":
-            exit(1)
-
-    if not chatD.get_member(bot.id).can_promote_members:
-        update.effective_message.reply_text("I can't promote/demote people here! "
-                                            "Make sure I'm admin and can appoint new admins.")
-        exit(1)
 
     user_id = extract_user(message, args)
     if not user_id:
-        message.reply_text(tld(chat.id, "You don't seem to be referring to a user."))
+        message.reply_text("mension one.... 🤷🏻‍♂.")
         return ""
 
-    user_member = chatD.get_member(user_id)
+    user_member = chat.get_member(user_id)
     if user_member.status == 'creator':
-        message.reply_text(tld(chat.id, "This person CREATED the chat, how would I demote them?"))
+        message.reply_text("i cant ban creator of the group.... 😬")
         return ""
 
     if not user_member.status == 'administrator':
-        message.reply_text(tld(chat.id, "Can't demote what wasn't promoted!"))
+        message.reply_text("Can't demote what wasn't promoted!")
         return ""
 
     if user_id == bot.id:
-        message.reply_text(tld(chat.id, "I can't demote myself!"))
+        message.reply_text("I can't demote myself! Get an admin to do it for me.")
         return ""
 
     try:
-        bot.promoteChatMember(int(chatD.id), int(user_id),
+        bot.promoteChatMember(int(chat.id), int(user_id),
                               can_change_info=False,
                               can_post_messages=False,
                               can_edit_messages=False,
@@ -120,19 +100,18 @@ def demote(bot: Bot, update: Update, args: List[str]) -> str:
                               can_restrict_members=False,
                               can_pin_messages=False,
                               can_promote_members=False)
-        message.reply_text(tld(chat.id, f"Successfully demoted in *{chatD.title}*!"), parse_mode=ParseMode.MARKDOWN)
-        return f"<b>{html.escape(chatD.title)}:</b>" \
-                "\n#DEMOTED" \
-               f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
-               f"\n<b>User:</b> {mention_html(user_member.user.id, user_member.user.first_name)}"
+        message.reply_text("Successfully demoted!")
+        return "<b>{}:</b>" \
+               "\n#DEMOTED" \
+               "\n<b>Admin:</b> {}" \
+               "\n<b>User:</b> {}".format(html.escape(chat.title),
+                                          mention_html(user.id, user.first_name),
+                                          mention_html(user_member.user.id, user_member.user.first_name))
 
     except BadRequest:
-        message.reply_text(
-            tld(chat.id, "Could not demote. I might not be admin, or the admin status was appointed by another user, so I can't act upon them!")
-            )
+        message.reply_text("Could not demote. I might not be admin, or the admin status was appointed by another "
+                           "user, so I can't act upon them!")
         return ""
-
-        
 
 
 @run_async
@@ -211,32 +190,25 @@ def invite(bot: Bot, update: Update):
 @run_async
 def adminlist(bot: Bot, update: Update):
     administrators = update.effective_chat.get_administrators()
-    msg = update.effective_message
     text = "Admins in *{}*:".format(update.effective_chat.title or "this chat")
     for admin in administrators:
         user = admin.user
         status = admin.status
         name = "[{}](tg://user?id={})".format(user.first_name + " " + (user.last_name or ""), user.id)
         if user.username:
-            name = name = escape_markdown("@" + user.username)
+            name = "[{}](tg://user?id={})".format(user.first_name + (user.last_name or ""), user.id)
         if status == "creator":
             text += "\n 🔱 Creator:"
-            text += "\n` • `{} \n\n • *Administrators*:".format(name)
+            text += "\n` • `{} \n\n 🔰 Admin:".format(name)
     for admin in administrators:
         user = admin.user
         status = admin.status
-        chat = update.effective_chat
-        count = chat.get_members_count()
         name = "[{}](tg://user?id={})".format(user.first_name + " " + (user.last_name or ""), user.id)
         if user.username:
-            name = escape_markdown("@" + user.username)
-            
+            name = "[{}](tg://user?id={})".format(user.first_name + (user.last_name or ""), user.id)
         if status == "administrator":
-            text += "\n`👮🏻 `{}".format(name)
-            members = "\n\n*Members:*\n`🧒 ` {} users".format(count)
-            
-    msg.reply_text(text + members, parse_mode=ParseMode.MARKDOWN)
-
+            text += "\n` • `{}".format(name)
+    update.effective_message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
 
 
 def __chat_settings__(chat_id, user_id):
@@ -246,6 +218,7 @@ def __chat_settings__(chat_id, user_id):
 
 __help__ = """
  - /adminlist: list of admins in the chat
+
 *Admin only:*
  - /pin: silently pins the message replied to - add 'loud' or 'notify' to give notifs to users.
  - /unpin: unpins the currently pinned message
